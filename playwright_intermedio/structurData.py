@@ -28,7 +28,7 @@
 from playwright.sync_api import sync_playwright
 from datetime import date
 import pandas as pd
-import csv
+import re
 import os
 
 def scrape_table_to_csv(url, csv_folder='data'):
@@ -40,29 +40,53 @@ def scrape_table_to_csv(url, csv_folder='data'):
         page.wait_for_selector('table')  # Esperar a que la tabla esté disponible
 
         thead = page.locator('table#main_table_countries_today thead tr th')
-
         thead_count = thead.count()
-        
-        headers = [thead.nth(i).inner_text().strip() for i in range(thead_count)]
 
-        tbody = page.locator('tbody')
-        tr = tbody.locator('tr')
+        visible_headers = []
+
+        for i in range(thead_count):
+            th = thead.nth(i)
+            if th.is_visible():
+                text = th.inner_text()
+                text = re.sub(r'\s+', ' ', text).strip()   # Eliminar espacios extra
+                text = text.encode('ascii', 'ignore').decode()  # Eliminar caracteres no ASCII
+                visible_headers.append(text)
+
+        # visible_headers_count = len(visible_headers)
+
+
+        tbody = page.locator('tbody').first   
+        tr = tbody.locator('tr')  # Seleccionar filas de la tabla
         rows_count = tr.count()
 
-        data = []
+        visible_tr = []
 
         for i in range(rows_count):
             row = tr.nth(i)
+            if row.is_visible():
+                visible_tr.append(row)
+        visible_tr_count = len(visible_tr)
+        # print(f"Total de filas encontradas: {visible_tr_count}")
+
+        data = []
+
+
+        for i in range(visible_tr_count):
+            row = visible_tr[i]
             row_data = []
-            for j in range(thead_count):
-                cell = row.locator('td').nth(j)
-                cell_text = cell.inner_text().strip()
-                row_data.append(cell_text)
+            tds = row.locator('td')
+            td_count = tds.count()
+            for j in range(td_count):
+                cell = tds.nth(j)
+                if cell.is_visible():
+                    # Si la celda es visible, extraer su texto
+                    cell_text = cell.inner_text().strip()
+                    row_data.append(cell_text)
             if any(row_data):
                 data.append(row_data)
 
         #Create DataFrame con pandas
-        df = pd.DataFrame(data, columns=headers)
+        df = pd.DataFrame(data, columns=visible_headers)
 
         hoy = date.today()
         if not os.path.exists(csv_folder):
@@ -77,4 +101,4 @@ def scrape_table_to_csv(url, csv_folder='data'):
         browser.close()
 
 
-scrape_table_to_csv('https://www.worldometers.info/coronavirus/', 'coronavirus_data.csv')
+scrape_table_to_csv('https://www.worldometers.info/coronavirus/', 'coronavirus_data')

@@ -63,6 +63,7 @@ def download_images_from_page(url, download_folder='downloaded_images'):
                         f.write(response.content)
                     
 
+        browser.close()  # Cerrar el navegador
 
 
 

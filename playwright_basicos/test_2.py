@@ -17,7 +17,7 @@
 
 from playwright.sync_api import sync_playwright
 
-url = 'https://duckduckgo.com/'
+url = 'https://www.google.com/'
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=False, slow_mo=1000) # Iniciar el navegador en modo no headless para ver la acción
@@ -26,8 +26,9 @@ with sync_playwright() as p:
 
     page.wait_for_load_state() # Esperar a que la página cargue completamente para todos los recursos
 
-    page.locator('input#searchbox_input').fill('Python Playwright');
-    page.locator('button[type="submit"]').click();
+    page.locator("[name='q']").fill('Python Playwright');
+    page.keyboard.press('Enter')
+    # page.locator('button[type="submit"]').click();
 
     page.wait_for_selector('a.result__a') # Esperar a que la página cargue completamente para todos los recursos
 
